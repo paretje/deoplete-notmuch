@@ -13,24 +13,19 @@ class Source(Base):
     def __init__(self, vim):
         super().__init__(vim)
 
-        # TODO: sensible rank?
-        self.rank = 600
+        self.rank = 75  # default is 100, give deoplete-abook priority
         self.name = 'notmuch'
         self.mark = '[nm]'
         self.min_pattern_length = 0
         self.filetypes = ['mail']
-        # TODO: fszymanski/deoplete-abook doesn't define input_pattern at all
-        self.input_pattern = '[^:,]+'
-        # TODO: other options: ['matcher_length', 'matcher_full_fuzzy']
-        # self.matchers = ['matcher_fuzzy']
+        self.matchers = ['matcher_full_fuzzy', 'matcher_length']
 
-        # TODO: should this be done in on_init?
-        self.command = vim.vars.get('deoplete#sources#notmuch#command',
-                                    ['notmuch', 'address',
-                                     '--format=sexp',
-                                     '--output=recipients',
-                                     '--deduplicate=address',
-                                     'tag:sent'])
+    def on_init(self, context):
+        self.command = context['vars'].get('deoplete#sources#notmuch#command',
+                                           ['notmuch', 'address',
+                                            '--format=sexp',
+                                            '--output=recipients',
+                                            'tag:sent'])
 
     def get_complete_position(self, context):
         colon = self.COLON_PATTERN.search(context['input'])
@@ -38,15 +33,15 @@ class Source(Base):
         return max(colon.end() if colon is not None else -1,
                    comma.end() if comma is not None else -1)
 
-    # TODO: caching
+    # TODO: caching?
     def gather_candidates(self, context):
         if self.HEADER_PATTERN.search(context['input']) is None:
-            return []
+            return
 
         try:
             command_results = subprocess.check_output(self.command, universal_newlines=True).split('\n')
         except CalledProcessError:
-            return []
+            return
 
         results = []
         for row in command_results:
