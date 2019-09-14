@@ -1,3 +1,4 @@
+import json
 import re
 import subprocess
 from subprocess import CalledProcessError
@@ -8,7 +9,6 @@ class Source(Base):
     COLON_PATTERN = re.compile(r':\s?')
     COMMA_PATTERN = re.compile(r'.+,\s?')
     HEADER_PATTERN = re.compile(r'^(Bcc|Cc|From|Reply-To|To):(\s?|.+,\s?)')
-    SEXP_PATTERN = re.compile(r'\(:name "(?P<name>.*)" :address "(?P<address>.+)" :name-addr "(?P<name_addr>.+)"\)')
 
     def __init__(self, vim):
         super().__init__(vim)
@@ -23,7 +23,7 @@ class Source(Base):
     def on_init(self, context):
         self.command = context['vars'].get('deoplete#sources#notmuch#command',
                                            ['notmuch', 'address',
-                                            '--format=sexp',
+                                            '--format=json',
                                             '--output=recipients',
                                             'tag:sent'])
 
@@ -37,15 +37,7 @@ class Source(Base):
     def gather_candidates(self, context):
         if self.HEADER_PATTERN.search(context['input']) is None:
             return
-
-        try:
-            command_results = subprocess.check_output(self.command, universal_newlines=True).split('\n')
-        except CalledProcessError:
-            return
-
-        results = []
-        for row in command_results:
-            regexp = self.SEXP_PATTERN.search(row.strip())
-            if regexp:
-                results.append({'word': regexp.group("name_addr")})
-        return results
+    
+        command_results = subprocess.check_output(self.command)
+        results = json.loads(command_results)
+        return [ e['name-addr'] for e in results]
