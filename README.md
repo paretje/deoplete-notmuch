@@ -33,4 +33,4 @@ The command must output JSON in the following schema to be parseable by this plu
 ]
 ```
 
-You can modify the `notmuch search` to great extents, for example replace `'*'` by `tag:sent` to narrow the completions down to people who already received an email from you. For further information, see `man 1 notmuch-address` and `man 7 notmuch-search-terms`.
+You can modify the `notmuch search` to great extents, for example replace `'*'` by `tag:sent` and add `--output=recipients` to narrow the completions down to people who already received an email from you. For further information, see `man 1 notmuch-address` and `man 7 notmuch-search-terms`.
